@@ -1,4 +1,7 @@
+import 'dart:ffi';
+
 import 'package:cinema_pedia/config/domain/entities/movie.dart';
+import 'package:cinema_pedia/presentations/providers/actors/actors_by_movie_provider.dart';
 import 'package:cinema_pedia/presentations/providers/movies/movie_info_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +24,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
     super.initState();
 
     ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
+    ref.read(actorsByMovieProvider.notifier).loadActors(widget.movieId);
   }
 
   @override
@@ -94,7 +98,13 @@ class _MovieDetails extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(movie.title, style: textStstyle.titleLarge),
+                      Text(
+                        movie.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                        ),
+                      ),
                       Text(movie.overview, style: textStstyle.titleSmall)
                     ],
                   ),
@@ -118,8 +128,19 @@ class _MovieDetails extends StatelessWidget {
             ],
           ),
         ),
+        const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text(
+            "Actores",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        _ActorsByMovie(movieId: movie.id.toString()),
         const SizedBox(
-          height: 100,
+          height: 50,
         )
       ],
     );
@@ -179,6 +200,70 @@ class _CustomSliversAppBar extends StatelessWidget {
             )
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ActorsByMovie extends ConsumerWidget {
+  final String movieId;
+  const _ActorsByMovie({required this.movieId});
+
+  @override
+  Widget build(BuildContext context, ref) {
+    final actorsByMovie = ref.watch(actorsByMovieProvider);
+    if (actorsByMovie[movieId] == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+        ),
+      );
+    }
+    final actors = actorsByMovie[movieId];
+
+    return SizedBox(
+      height: 400,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: actors?.length,
+        itemBuilder: (context, index) {
+          final actor = actors?[index];
+          return Container(
+            padding: const EdgeInsets.all(8),
+            width: 135,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.network(
+                    actor!.profilePath,
+                    height: 200,
+                    width: 155,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(
+                  height: 5,
+                ),
+                Text(
+                  actor.name,
+                  maxLines: 2,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  actor.character ?? "",
+                  maxLines: 2,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      overflow: TextOverflow.ellipsis),
+                )
+              ],
+            ),
+          );
+        },
       ),
     );
   }
